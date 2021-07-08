@@ -34,3 +34,19 @@ export const uploadAvatar = async (req, res) => {
   const { statusCode, data, message } = await userService.uploadAvatarService(req.params, req.file);
   return res.status(statusCode).json({ data, message });
 }
+
+export const changePassword = async (req, res) => {
+  const { statusCode, data, message } = await userService.changePasswordService(req.body, req.params);
+  return res.status(statusCode).json({ data, message });
+}
+
+export const forgotPassword = async (req, res) => {
+  const { statusCode, message } = await userService.forgotPasswordService(req.body);
+  return res.status(statusCode).json({ message });
+}
+
+export const resetPassword = async (req, res) => {
+  const { statusCode, message } = await userService.resetPasswordService(req.params, req.body);
+  return res.status(statusCode).json({ message });
+}
+

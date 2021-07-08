@@ -60,7 +60,8 @@ export const getVoucherService = async (query) => {
     const voucher = await Voucher.findAndCountAll({
       limit,
       offset,
-      where: { discountMoney: { [Op.like]: '%' + query.discountMoney + '%' } }
+      where: { discountMoney: { [Op.like]: '%' + query.discountMoney + '%' } },
+      order: [['code', 'ASC']],
     });
     response.data = voucher;
   } catch (error) {

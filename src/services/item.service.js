@@ -69,15 +69,21 @@ export const getItemService = async (query) => {
   }
   try {
     let page = parseInt(query.page);
+    let { price, name } = query;
     const limit = 2;
     const offset = page ? (page * limit) : 0;
 
     const item = await Item.findAndCountAll({
       limit,
       offset,
-      where: { name: { [Op.like]: '%' + query.name + '%' } },
+      where: {
+        name: { [Op.like]: '%' + name + '%' },
+        sellPrice: { [Op.gte]: price }
+      },
+      order: [['name', 'ASC']],
       include: { model: Category }
     });
+
     response.data = item;
   } catch (error) {
     response.statusCode = 500;

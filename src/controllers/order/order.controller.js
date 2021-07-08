@@ -16,6 +16,6 @@ export const getOrderById = async (req, res) => {
 }
 
 export const deleteOrder = async (req, res) => {
-  const { statusCode, data, message } = await orderService.deleteOrderService(req.params);
-  return res.status(statusCode).json({ data, message });
+  const { statusCode, message } = await orderService.deleteOrderService(req.params);
+  return res.status(statusCode).json({ message });
 }

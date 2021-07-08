@@ -16,7 +16,8 @@ export const uploadMultipleImageService = async (id, files) => {
         data: {}
       }
     }
-    await item.update({ image: files['image'][0].filename })
+    await item.update({ image: files['image'][0].filename });
+
     if (files['images']) {
       files['images'].map(async (files) => {
         const uploadImage = await DetailImage.create({ image: files.filename, itemId: item.id })

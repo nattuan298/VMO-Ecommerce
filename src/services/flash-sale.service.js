@@ -43,10 +43,11 @@ export const createFlashSaleService = async (body) => {
         }
       }
 
-      if (startTimeBody < Date.now()) {
+      // Flash sale must be create before 15m start
+      if (startTimeBody < (Date.now() + 900000)) {
         return {
           statusCode: 400,
-          message: 'Cannot create flash in the past'
+          message: 'Flash sales can only be created 15 minutes in advance'
         }
       }
     }
@@ -65,6 +66,7 @@ export const createFlashSaleService = async (body) => {
       }
     };
 
+    // create flash sale
     const flashSale = await FlashSale.create({
       startTime,
       endTime,
@@ -86,7 +88,6 @@ export const createFlashSaleService = async (body) => {
     const timeSendEmail = startTimeBody - 900000; // Before 15m flash sale start
     var date = new Date(timeSendEmail); // create Date object
 
-    //Enter timezone Vietnam in postman
     const htmlTemplate = `
     <h1>FLASH SALE</h1><br>
     <h3>Please follow our website to catch the flash sale start ${startTime} to ${endTime}</h3>
@@ -104,7 +105,7 @@ export const createFlashSaleService = async (body) => {
     });
     //find all email to send noti
     const user = await User.findAll({ attributes: ['email'] });
-    //Cron job
+    //Cron job to send email
     schedule.scheduleJob(date, function () {
       console.log('Email sent');
       for (let i = 0; i < user.length; i++) {
@@ -136,6 +137,7 @@ export const getFlashSale = async (query) => {
     data: {}
   }
   try {
+    const { discountPercent, discount } = query;
     let page = parseInt(query.page);
     const limit = 2;
     const offset = page ? (page * limit) : 0;
@@ -143,7 +145,11 @@ export const getFlashSale = async (query) => {
     const flashSale = await FlashSale.findAndCountAll({
       limit,
       offset,
-      where: { discountPercent: { [Op.like]: '%' + query.discountPercent + '%' } }
+      where: {
+        discountPercent: { [Op.like]: '%' + discountPercent + '%' },
+        discountPercent: { [Op.gte]: discount }
+      },
+      order: [['discountPercent', 'ASC']],
     });
     response.data = flashSale;
   } catch (error) {

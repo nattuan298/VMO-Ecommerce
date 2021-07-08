@@ -55,7 +55,7 @@ export const createOrderService = async (body, user) => {
       //Push price to array
       allPrice.push(priceItem);
 
-      await OrderItem.create({
+      const resultOrderItem = await OrderItem.create({
         name: item.name,
         quantity: orderItems[i].quantity,
         image: item.image,
@@ -63,6 +63,10 @@ export const createOrderService = async (body, user) => {
         orderId: order.id,
         itemId: orderItems[i].itemId
       });
+      // if can not create Order item then delete order
+      if (!resultOrderItem) {
+        await order.destroy();
+      }
       let newQuantity = item.quantity - orderItems[i].quantity;
       await item.update({ quantity: newQuantity })
     }
@@ -122,6 +126,7 @@ export const getOrderService = async (query) => {
       limit,
       offset,
       where: { email: { [Op.like]: '%' + query.email + '%' } },
+      order: [['totalPrice', 'ASC']],
       include: { model: OrderItem }
     });
 
@@ -161,7 +166,6 @@ export const deleteOrderService = async (id) => {
   const response = {
     statusCode: 200,
     message: 'Order Deleted',
-    data: {}
   }
   try {
     const order = await Order.findOne({ where: id });
@@ -169,10 +173,11 @@ export const deleteOrderService = async (id) => {
       return {
         statusCode: 404,
         message: 'Order not found',
-        data: {}
       }
     };
-    await order.destroy();
+    const voucher = await Voucher.findOne({ where: { id: order.voucherId } });
+    const newQuantity = voucher.quantity + 1;
+    await Promise.all([order.destroy(), voucher.update({ quantity: newQuantity })]);
   } catch (error) {
     response.statusCode = 500;
     response.message = error.message

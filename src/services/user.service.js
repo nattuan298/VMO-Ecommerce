@@ -3,6 +3,8 @@ import jwt from "jsonwebtoken"
 import 'dotenv/config'
 import bcrypt from 'bcrypt';
 import Sequelize from 'sequelize';
+import cryptoRandomString from 'crypto-random-string';
+import nodemailer from 'nodemailer';
 
 const Op = Sequelize.Op;
 
@@ -30,7 +32,8 @@ export const createUserService = async (body) => {
       password: bcrypt.hashSync(password, salt),
       email,
       phone,
-      isAdmin
+      isAdmin,
+      changePasswordDate: Date.now()
     }
     const user = await User.create(userItem);
     response.data = user;
@@ -55,7 +58,8 @@ export const getUserService = async (query) => {
     const userData = await User.findAndCountAll({
       limit,
       offset,
-      where: { username: { [Op.like]: '%' + query.username + '%' } }
+      where: { username: { [Op.like]: '%' + query.username + '%' } },
+      order: [['username', 'ASC']],
     });
     response.data = userData;
   } catch (error) {
@@ -88,13 +92,6 @@ export const updateUserService = async (id, body) => {
     data: {}
   }
   try {
-    if (!!body.password) {
-      return {
-        statusCode: 400,
-        message: 'Can not update password, please change password!',
-        data: {}
-      }
-    }
     if (!!body.username) {
       const userExisted = await User.findAll({ where: { username: body.username } });
       if (userExisted[0]?.username == body.username) {
@@ -149,7 +146,11 @@ export const loginService = async (body) => {
         data: {}
       }
     }
-    const token = jwt.sign({ id: user.id, email: user.email, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+    const token = jwt.sign(
+      { id: user.id, email: user.email, isAdmin: user.isAdmin, changePasswordDate: user.changePasswordDate },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
     response.data = token;
   } catch (error) {
     response.statusCode = 500;
@@ -174,3 +175,131 @@ export const uploadAvatarService = async (id, file) => {
   }
   return response;
 };
+
+export const changePasswordService = async (body, id) => {
+  const response = {
+    statusCode: 200,
+    message: 'Reset password successful',
+    data: {}
+  }
+  const { password, newPassword, confirmPassword } = body;
+  const userId = Object.values(id)
+  try {
+    console.log(userId);
+    const user = await User.findOne({ where: { id: userId } });
+    if (!bcrypt.compareSync(password, user.password)) {
+      return {
+        statusCode: 404,
+        message: 'Password incorrect!',
+        data: {}
+      }
+    }
+    if (newPassword !== confirmPassword) {
+      return {
+        statusCode: 404,
+        message: 'Confirm password does not match the new password!',
+        data: {}
+      }
+    }
+    const saltRounds = 10;
+    const salt = bcrypt.genSaltSync(saltRounds);
+    const data = user.update({ password: bcrypt.hashSync(newPassword, salt), changePasswordDate: Date.now() });
+    response.data = data;
+  } catch (error) {
+    response.statusCode = 500;
+    response.message = error.message;
+  }
+  return response;
+};
+
+export const forgotPasswordService = async (body) => {
+  const response = {
+    statusCode: 200,
+    message: 'Email reset password sent!',
+    data: {}
+  }
+  const email = body;
+  try {
+    const user = await User.findOne({ where: { email: Object.values(email) } });
+    console.log(user);
+    const token = cryptoRandomString({ length: 20, type: 'base64' }.length, 20);
+
+    // create reusable tranporter object using the default SMTP tranport
+    let transporter = nodemailer.createTransport({
+      service: 'gmail',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.EMAIL_PASS
+      }
+    });
+    const urlBase = `http://localhost:3000/api/v1/users/reset/`;
+    const htmlTemplate = `
+    <h1>DO NOT REPLY</h1><br><br>
+    <h3>Please click this link to reset your password:
+    <a href="${urlBase}${token}">Here</a></h3>
+    `;
+    //setup email data with unicode symbols
+    let mailOptions = {
+      from: process.env.EMAIL, //sender
+      to: Object.values(email),
+      subject: 'Verify Email',
+      html: htmlTemplate
+    }
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return console.log(error);
+      }
+    })
+
+    await user.update({ resetPasswordExpires: Date.now() + 300000, resetPasswordToken: token });
+  } catch (error) {
+    response.statusCode = 500;
+    response.message = error.message;
+  }
+  return response;
+}
+
+export const resetPasswordService = async (token, body) => {
+  const response = {
+    statusCode: 200,
+    message: 'Password reset successfully!',
+    data: {}
+  }
+  const { newPassword, confirmPassword } = body;
+  try {
+    const user = await User.findOne({
+      where: {
+        resetPasswordToken: Object.values(token),
+        resetPasswordExpires: { [Op.gte]: Date.now() }
+      }
+    });
+    if (!user) {
+      return {
+        statusCode: 400,
+        message: 'Password reset token is invalid or has expired.',
+        data: {}
+      }
+    }
+    if (newPassword !== confirmPassword) {
+      return {
+        statusCode: 404,
+        message: 'Confirm password does not match the new password!',
+        data: {}
+      }
+    }
+
+    //hash password
+    const saltRounds = 10;
+    const salt = bcrypt.genSaltSync(saltRounds);
+
+    const data = user.update({ password: bcrypt.hashSync(newPassword, salt), changePasswordDate: Date.now() });
+
+    response.data = data;
+  } catch (error) {
+    response.statusCode = 500;
+    response.message = error.message;
+  }
+  return response;
+}

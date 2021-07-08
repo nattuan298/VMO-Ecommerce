@@ -4,11 +4,12 @@ import verifyToken from '../middlewares/authentication.js';
 import { validateRequest, validateRole } from '../middlewares/validator.js';
 import * as categoryValidate from '../controllers/category/category.validate.js';
 import { uploadFile } from '../middlewares/upload-image.js';
+import verifyPasswordChange from '../middlewares/change-password.js';
 
 const router = express.Router();
 
 export default (prefix) => {
-  prefix.use('/categories', verifyToken, router);
+  prefix.use('/categories', verifyToken, verifyPasswordChange, router);
 
   router.post('/', validateRole, categoryValidate.createCategory, validateRequest, categoryController.listCategory);
   router.put('/upload/:id', uploadFile.single('banner'), categoryController.updateBanner);

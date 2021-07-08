@@ -39,7 +39,8 @@ export const getCategoryService = async (query) => {
     const cate = await Category.findAndCountAll({
       limit,
       offset,
-      where: { name: { [Op.like]: '%' + query.name + '%' } }
+      where: { name: { [Op.like]: '%' + query.name + '%' } },
+      order: [['name', 'ASC']],
     });
     response.data = cate;
   } catch (error) {
@@ -165,7 +166,6 @@ export const positionBanner = async (body) => {
 
     //Create array banner by position increment, so FE will handle this array to show banner.
     const bannerArray = bannerPromise;
-    console.log(bannerArray);
 
     response.data = bannerArray;
   } catch (error) {

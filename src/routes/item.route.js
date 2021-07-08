@@ -4,13 +4,13 @@ import verifyToken from '../middlewares/authentication.js';
 import { validateRequest, validateRole } from '../middlewares/validator.js';
 import * as itemValidate from '../controllers/item/item.validate.js'
 import { uploadFile } from '../middlewares/upload-image.js';
-import multer from 'multer';
+import verifyPasswordChange from '../middlewares/change-password.js';
 
 
 const router = express.Router();
 
 export default (prefix) => {
-  prefix.use('/items', verifyToken, router);
+  prefix.use('/items', verifyToken, verifyPasswordChange, router);
 
   router.post('/', itemValidate.createItem, validateRequest, validateRole, itemController.createItem);
   router.post('/upload/:id', uploadFile.fields([{ name: 'image', maxCount: 1 }, { name: 'images', maxCount: 5 }]),
