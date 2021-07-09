@@ -1,5 +1,5 @@
 # VMO-Ecommerce
-This is a back-end project for Ecommerce.
+This is a back-end of personal small project for Ecommerce.
 #
 ## Feature of APIs
 ### Requirements
