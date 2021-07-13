@@ -218,12 +218,10 @@ export const forgotPasswordService = async (body) => {
     message: 'Email reset password sent!',
     data: {}
   }
-  const email = body;
+  const username = body;
   try {
-    const user = await User.findOne({ where: { email: Object.values(email) } });
-    console.log(user);
+    const user = await User.findOne({ where: { username: Object.values(username) } });
     const token = cryptoRandomString({ length: 20, type: 'base64' }.length, 20);
-
     // create reusable tranporter object using the default SMTP tranport
     let transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -243,7 +241,7 @@ export const forgotPasswordService = async (body) => {
     //setup email data with unicode symbols
     let mailOptions = {
       from: process.env.EMAIL, //sender
-      to: Object.values(email),
+      to: user.email,
       subject: 'Verify Email',
       html: htmlTemplate
     }
