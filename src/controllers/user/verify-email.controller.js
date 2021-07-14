@@ -6,6 +6,6 @@ export const sendEmail = async (req, res) => {
 }
 
 export const verify = async (req, res) => {
-  const { statusCode, data, message } = await verifyEmail.verifyEmailService(req.params, req.body);
-  return res.status(statusCode).json({ data, message });
+  const { statusCode, message } = await verifyEmail.verifyEmailService(req.params, req.body);
+  return res.status(statusCode).json({ message });
 }

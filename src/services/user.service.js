@@ -185,7 +185,7 @@ export const changePasswordService = async (body, id) => {
   const { password, newPassword, confirmPassword } = body;
   const userId = Object.values(id)
   try {
-    console.log(userId);
+
     const user = await User.findOne({ where: { id: userId } });
     if (!bcrypt.compareSync(password, user.password)) {
       return {

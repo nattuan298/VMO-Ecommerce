@@ -1,4 +1,7 @@
 import Category from "../models/category.model.js";
+import Sequelize from 'sequelize';
+
+const Op = Sequelize.Op;
 
 export const createCategoryService = async (body) => {
   const response = {

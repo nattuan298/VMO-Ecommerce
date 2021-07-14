@@ -1,4 +1,7 @@
 import Voucher from "../models/voucher.model.js";
+import Sequelize from 'sequelize';
+
+const Op = Sequelize.Op;
 
 export const createVoucherService = async (body) => {
   const response = {

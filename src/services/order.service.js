@@ -146,7 +146,7 @@ export const getOrderByIdService = async (id) => {
   }
 
   try {
-    const order = await Order.findOne({ where: id });
+    const order = await Order.findOne({ where: id, include: { model: OrderItem } });
     if (order === null) {
       return {
         statusCode: 404,

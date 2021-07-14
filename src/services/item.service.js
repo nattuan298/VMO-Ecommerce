@@ -99,7 +99,7 @@ export const getItemByIdService = async (id) => {
     data: {}
   }
   try {
-    const item = await Item.findOne({ where: id });
+    const item = await Item.findOne({ where: id, include: { model: DetailImage } });
     if (item === null) {
       return {
         statusCode: 404,
