@@ -3,11 +3,7 @@ import expressValidator from 'express-validator';
 export const createItem = [
   expressValidator.body('name')
     .notEmpty()
-    .bail()
     .withMessage('Name is required')
-    .isAlphanumeric()
-    .bail()
-    .withMessage('Name can not be special charater')
   ,
   expressValidator.body('barcode').notEmpty().withMessage('Barcode is required'),
   expressValidator.body('importPrice')
